@@ -59,7 +59,7 @@ app.post('/login',async (req,res)=>{
             username,
           });//im sending it back as a cookie which i can find in the headers tab in network in order to save the cookie inside of my react app
 
-      })//create token which essentially is a random string
+      })//create token
 
     }
     else{
@@ -90,18 +90,29 @@ app.post('/logout',(req,res)=>{
 })
 
 app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
+  
+  console.log('Received a POST request to /post');
+  console.log('Cookies:', req.cookies);
+  console.log('Headers:', req.headers);
+  
   try {
     const { originalname, path: tempPath } = req.file;
     const parts = originalname.split('.');
     const ext = parts[parts.length - 1];
     const newPath = `${tempPath}.${ext}`;
     fs.renameSync(tempPath, newPath);
-    //now im done with fixing the file
-    //i want to save the 4 things to db and for that i will need a new model Post
 
     const { token } = req.cookies;//jwt token from cookies
+    
+     if (!token) {
+      return res.status(401).json('No token found');
+    }
+
     jwt.verify(token, secret, {}, async (err, info) => {
-      if (err) return res.status(401).json('Invalid token');
+      if (err) {
+        console.log('JWT verification error:', err);
+        return res.status(401).json('Invalid token');
+      }
 
       const { title, summary, content, performanceQuality, pqComments, stagePresence, spComments, soundQuality, sqComments, visualEffects, veComments, audienceInteraction, aiComments } = req.body;
       const postDoc = await Post.create({
@@ -157,6 +168,71 @@ app.get('/concerts', async (req, res) => {
     console.error('Error fetching concerts:', error);
     res.status(500).json({ error: 'Server error while fetching concerts'});
   }
+});
+
+app.put('/post',uploadMiddleware.single('file'), async (req,res) => {
+  let newPath = null;
+  if (req.file) {
+    const {originalname,path:tempPath} = req.file;
+    const parts = originalname.split('.');
+    const ext = parts[parts.length - 1];
+    const newPath = `${tempPath}.${ext}`;
+    fs.renameSync(path, newPath);
+  }
+
+  const {token} = req.cookies;
+  jwt.verify(token, secret, {}, async (err,info) => {
+    if (err) throw err;
+    const {id,title, summary, content, performanceQuality, pqComments, stagePresence, spComments, soundQuality, sqComments, visualEffects, veComments, audienceInteraction, aiComments } = req.body;
+    const postDoc = await Post.findById(id);
+    console.log(postDoc)
+    const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+    if (!isAuthor) {
+      return res.status(400).json('You are not the author');
+    }
+
+    postDoc.title = title;
+    postDoc.summary = summary;
+    postDoc.content = content;
+    postDoc.cover = newPath ? newPath : postDoc.cover;
+    postDoc.performanceQuality = performanceQuality;
+    postDoc.pqComments = pqComments;
+    postDoc.stagePresence = stagePresence;
+    postDoc.spComments = spComments;
+    postDoc.soundQuality = soundQuality;
+    postDoc.sqComments = sqComments;
+    postDoc.visualEffects = visualEffects;
+    postDoc.veComments = veComments;
+    postDoc.audienceInteraction = audienceInteraction;
+    postDoc.aiComments = aiComments;
+
+    await postDoc.save();
+    res.json(postDoc);
+  });
+
+});
+
+app.delete('/post/:id',async(req,res)=>{
+  const {token}=req.cookies;
+  jwt.verify(token, secret, {}, async (err, info) => {
+    if (err) {
+      console.error('JWT verification error', err);
+      return res.status(401).json('Token verification failed');
+    }
+    const postDoc = await Post.findById(req.params.id);
+    if (!postDoc) {
+      return res.status(404).json('Post not found');
+    }
+
+    const isAuthor = JSON.stringify(postDoc.author) === JSON.stringify(info.id);
+    if (!isAuthor) {
+      return res.status(400).json('You are not the author');
+    }
+
+    await Post.deleteOne({ _id: req.params.id });
+
+    res.json('Post deleted');
+  });
 });
 
 app.listen(4000);
