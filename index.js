@@ -54,12 +54,15 @@ app.post('/login',async (req,res)=>{
 
       jwt.sign({username,id:userDoc._id},secret,{},(err,token)=>{
         if(err) throw err;
-          res.cookie('token', token).json({
+          res.cookie('token', token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'None'
+          }).json({
             id:userDoc._id,
             username,
           });//im sending it back as a cookie which i can find in the headers tab in network in order to save the cookie inside of my react app
-
-      })//create token
+      });//create token
 
     }
     else{
@@ -85,9 +88,9 @@ app.get('/profile',(req,res)=>{
   })
 })
 
-app.post('/logout',(req,res)=>{
-  res.cookie('token','').strictContentLength('ok');
-})
+app.post('/logout', (req, res) => {
+  res.clearCookie('token').json({ message: 'Logged out successfully' });
+});
 
 app.post('/post', uploadMiddleware.single('file'), async (req, res) => {
   
@@ -233,6 +236,23 @@ app.delete('/post/:id',async(req,res)=>{
 
     res.json('Post deleted');
   });
+});
+
+app.get('/search', async (req, res) => {
+  const { query } = req.query;
+  try {
+    const posts = await Post.find({
+      $or: [
+        { title: { $regex: query, $options: 'i' } }, // Search by title (case-insensitive)
+        { content: { $regex: query, $options: 'i' } }, // Search by content (case-insensitive)
+      ],
+    }).populate('author', ['username']);
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Error searching posts:', error);
+    res.status(500).json({ error: 'Server error while searching posts' });
+  }
 });
 
 app.listen(4000);

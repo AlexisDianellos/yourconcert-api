@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Concert = require('./models/Concerts');
 
-mongoose.connect('mongodb+srv://alexisdianellos:blogapp2704@cluster0.teee0iv.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')//to connect to db
+mongoose.connect(process.env.MONGODB_URI)//to connect to db
 
 const sampleConcerts = [//13
   {
