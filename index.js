@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const multer = require('multer');
 const uploadMiddleware = multer({dest:'./uploads'});
 const fs = require('fs');//file system
+const port = process.env.PORT || 4000;
 
 const salt=bcrypt.genSaltSync(10);//generate salt for passwords, protects from attacks
 const secret = process.env.SECRET_SALT;//salt for json web tokens
@@ -255,4 +256,6 @@ app.get('/search', async (req, res) => {
   }
 });
 
-app.listen(4000);
+app.listen(port, () => {
+  console.log(`App listening on port ${port}`)
+})
