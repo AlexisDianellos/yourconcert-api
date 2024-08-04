@@ -4,8 +4,8 @@ const secret = process.env.SECRET_SALT;
 const verifyToken = (req, res, next) => {
   const { token } = req.cookies;
   if (!token) {
-    console.error('no Token');
-    return res.status(401).json('No token found');
+    console.log('No token found in cookies:', req.cookies);
+    return res.status(401).json({ message: 'No token found' });
   }
 
   jwt.verify(token, secret, (err, decoded) => {

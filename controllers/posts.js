@@ -13,6 +13,9 @@ exports.createPost = async(req,res)=>{
     fs.renameSync(tempPath, newPath);
 
     const { token } = req.cookies;//jwt token from cookies
+    console.log('Request Cookies:', req.cookies);
+    console.log('Request Headers:', req.headers);
+
     
      if (!token) {
       return res.status(401).json('No token found');
