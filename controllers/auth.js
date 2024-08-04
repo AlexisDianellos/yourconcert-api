@@ -23,27 +23,34 @@ exports.register = async(req,res)=>{
 exports.login = async(req,res)=>{
   try{
     const {username,password} = req.body;
+    console.log('Login attempt for user:', username);
     const userDoc = await User.findOne({username:username});
+    if (!userDoc) {
+      console.error('User does not exist:', username);
+      return res.status(400).json('User doesn’t exist');
+    }
     if (userDoc){
       const passwordResult = bcrypt.compareSync(password,userDoc.password)
       if (passwordResult){
         //logged in
-  
+        console.log('User authenticated successfully:', username);
         jwt.sign({username,id:userDoc._id},secret,{},(err,token)=>{
           if(err) throw err;
+          console.log('JWT generated successfully for user:', username);
             res.cookie('token', token, {
               httpOnly: true,
-              secure: true,
-              sameSite: 'None'
+              secure: process.env.NODE_ENV === 'production',
+              sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
             }).json({
               id:userDoc._id,
               username,
             });
         });//create token
-  
+        console.log('Token sent via cookie to the frontend');
       }
       else{
         //not logged in
+        console.error('Password mismatch for user:', username);
         res.status(400).json('Incorrect username or password');
       }
       }else{
