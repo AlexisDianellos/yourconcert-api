@@ -5,10 +5,13 @@ const verifyToken = (req, res, next) => {
   const { token } = req.cookies;
   if (!token) {
     return res.status(401).json('No token found');
+    console.error('no Token');
+    alert()
   }
 
   jwt.verify(token, secret, (err, decoded) => {
     if (err) {
+      console.error('Token verification failed:', err.message);
       return res.status(401).json('Invalid token');
     }
     req.user = decoded;
