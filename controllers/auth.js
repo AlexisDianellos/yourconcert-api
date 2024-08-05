@@ -39,8 +39,8 @@ exports.login = async(req,res)=>{
           console.log('JWT generated successfully for user:', username);
             res.cookie('token', token, {
               httpOnly: true,
-              secure: false,
-              sameSite: None,
+              secure: true,
+              sameSite: 'strict',
             }).json({
               id:userDoc._id,
               username,
