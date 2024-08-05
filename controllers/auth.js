@@ -44,6 +44,7 @@ exports.login = async(req,res)=>{
             }).json({
               id:userDoc._id,
               username,
+              token,
             });
         });//create token
         console.log('Token sent via cookie to the frontend');
